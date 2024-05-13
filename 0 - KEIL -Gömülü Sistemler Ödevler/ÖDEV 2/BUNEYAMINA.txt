@@ -1,0 +1,90 @@
+#include <stdint.h>
+#include "TM4C123.h"  // CMSIS Header file for the TM4C123G
+
+// Function Prototypes
+void GPIO_WritePin(GPIOA_Type *GPIOx, uint8_t pin, int value);
+void set_segments(uint8_t pattern);
+void activate_common_leg_left_display();
+void deactivate_common_leg_left_display();
+void activate_common_leg_right_display();
+void deactivate_common_leg_right_display();
+void delay(int32_t ms);
+
+void GPIO_WritePin(GPIOA_Type *GPIOx, uint8_t pin, int value) {
+    if (value) {
+        GPIOB->DATA |= (1U << 2);
+    } else {
+        GPIOB->DATA &= ~(1U << 2);
+    }
+}
+
+
+// GPIO setup
+int configure_GPIO_pins();
+
+// Segment patterns for 0-9
+const uint8_t segmentPatterns[10] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 
+0x6D, 0x7D, 0x07, 0x7F, 0x6F};
+
+// Main loop
+int main(){
+while(1){
+for (int number = 0; number < 100; number++) {
+    int tens = number / 10;
+    int units = number % 10;
+
+    // Display tens digit on left display
+    set_segments(segmentPatterns[tens]);
+    activate_common_leg_left_display(); // PA2 on
+    deactivate_common_leg_right_display(); // PB7 off
+    delay(1);
+
+    // Display units digit on right display
+    set_segments(segmentPatterns[units]);
+    activate_common_leg_right_display(); // PB7 on
+    deactivate_common_leg_left_display(); // PA2 off
+    delay(1);
+}
+}
+}
+
+// Functions to control segments and common legs
+void set_segments(uint8_t pattern) {
+		GPIO_WritePin(GPIOB, 0, (pattern & 0x01)); // Segment A
+    GPIO_WritePin(GPIOB, 1, (pattern & 0x02)); // Segment B
+    GPIO_WritePin(GPIOB, 2, (pattern & 0x04)); // Segment C
+    GPIO_WritePin(GPIOB, 3, (pattern & 0x08)); // Segment D
+    GPIO_WritePin(GPIOB, 4, (pattern & 0x10)); // Segment E
+    GPIO_WritePin(GPIOB, 5, (pattern & 0x20)); // Segment F
+    GPIO_WritePin(GPIOB, 6, (pattern & 0x40)); // Segment G
+	}
+
+void activate_common_leg_left_display() {
+    // For a common anode display, set the pin low to turn it on
+    // For a common cathode display, set the pin high to turn it on
+    GPIO_WritePin(GPIOA, 2, 0); // Replace HIGH with LOW if you have a common anode display
+}
+
+void deactivate_common_leg_left_display() {
+    // Set the opposite state of the activate function
+    GPIO_WritePin(GPIOA, 2, 1); // Replace LOW with HIGH if you have a common anode display
+}
+
+void activate_common_leg_right_display() {
+    GPIO_WritePin(GPIOB, 7, 0); // Replace HIGH with LOW if you have a common anode display
+}
+
+void deactivate_common_leg_right_display() {
+    GPIO_WritePin(GPIOB, 7, 1); // Replace LOW with HIGH if you have a common anode display
+}
+
+void delay(int32_t ms)
+{
+	for(int i=0;i<ms;i++)
+  {
+		for(int j=0;j<3180;j++)
+    {
+			__NOP();
+    }
+  }
+}
